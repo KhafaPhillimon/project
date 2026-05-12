@@ -33,15 +33,22 @@ CSV_PATH = "AI_Solutions_Web_Log_Dataset.csv"
 def load_data():
     try:
         df = pd.read_csv(CSV_PATH)
-        df["timestamp"] = pd.to_datetime(df["timestamp"], dayfirst=True)
+        # Verify essential columns exist
+        cols = ["timestamp", "country", "service_type", "status_code", "response_size", "ip_address", "method", "page"]
+        for c in cols:
+            if c not in df.columns:
+                df[c] = 0 if "size" in c else "Unknown"
+
+        df["timestamp"] = pd.to_datetime(df["timestamp"], dayfirst=True, errors='coerce')
+        df = df.dropna(subset=["timestamp"]) # Remove rows with invalid dates
         df["date"]      = df["timestamp"].dt.date
         df["hour"]      = df["timestamp"].dt.hour
         df["week"]      = df["timestamp"].dt.isocalendar().week.astype(int)
         df["status_code"] = df["status_code"].astype(str)
         return df
     except Exception as e:
-        print(f"Error loading data: {e}")
-        return pd.DataFrame()
+        print(f"LOG: Data load failed, using empty schema. Error: {e}")
+        return pd.DataFrame(columns=["timestamp", "country", "service_type", "status_code", "response_size", "ip_address", "method", "page", "date", "hour", "week"])
 
 df = load_data()
 
@@ -521,11 +528,23 @@ def dashboard_layout(pathname):
                                 children=[
                                     html.Div([
                                         html.P("Filter Country", style={"fontSize": "0.7rem", "fontWeight": "700", "color": MUTED, "margin": "0 0 4px", "textTransform": "uppercase"}),
-                                        dcc.Dropdown(id="filter-country", options=[{"label": "Global View", "value": "ALL"}] + [{"label": c, "value": c} for c in sorted(df["country"].unique())], value="ALL", clearable=False, style={"width": "160px", "fontSize": "0.8rem"}),
+                                        dcc.Dropdown(
+                                            id="filter-country", 
+                                            options=[{"label": "Global View", "value": "ALL"}] + [{"label": c, "value": c} for c in sorted(df["country"].unique())] if not df.empty else [{"label": "No Data", "value": "ALL"}], 
+                                            value="ALL", 
+                                            clearable=False, 
+                                            style={"width": "160px", "fontSize": "0.8rem"}
+                                        ),
                                     ]),
                                     html.Div([
                                         html.P("Filter Service", style={"fontSize": "0.7rem", "fontWeight": "700", "color": MUTED, "margin": "0 0 4px", "textTransform": "uppercase"}),
-                                        dcc.Dropdown(id="filter-service", options=[{"label": "All Services", "value": "ALL"}] + [{"label": s, "value": s} for s in sorted(df["service_type"].unique())], value="ALL", clearable=False, style={"width": "160px", "fontSize": "0.8rem"}),
+                                        dcc.Dropdown(
+                                            id="filter-service", 
+                                            options=[{"label": "All Services", "value": "ALL"}] + [{"label": s, "value": s} for s in sorted(df["service_type"].unique())] if not df.empty else [{"label": "No Data", "value": "ALL"}], 
+                                            value="ALL", 
+                                            clearable=False, 
+                                            style={"width": "160px", "fontSize": "0.8rem"}
+                                        ),
                                     ]),
                                 ]
                             ),
