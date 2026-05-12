@@ -3,4 +3,3 @@ plotly
 pandas
 flask
 gunicorn
-dash.html
