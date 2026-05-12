@@ -70,10 +70,13 @@ SERVICE_COLOURS = {
 
 
 # ── Dash Setup ───────────────────────────────────────────────────────────────
-server = flask.Flask(__name__)
+import os
+server = flask.Flask(__name__, static_folder='assets')
 app = dash.Dash(
     __name__, 
     server=server, 
+    assets_folder=os.path.join(os.getcwd(), 'assets'),
+    include_assets_files=True,
     suppress_callback_exceptions=True,
     external_stylesheets=[
         "https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap",
