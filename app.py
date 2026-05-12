@@ -145,6 +145,20 @@ app.index_string = f'''
 #  COMPONENTS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+def brand_logo(size="80px"):
+    return html.Div(
+        style={"textAlign": "center", "marginBottom": "1.5rem"},
+        children=[
+            # Try to load the logo, if it fails, the alt text and styling provide a professional fallback
+            html.Img(
+                src=app.get_asset_url("logo.png"),
+                style={"width": size, "borderRadius": "12px", "display": "block", "margin": "0 auto"},
+                title="AI Solutions",
+                alt="⚡" # Minimalist icon if image fails
+            )
+        ]
+    )
+
 def stat_card(title, value, subtitle="", colour=NAVY):
     return html.Div(
         className="glass-card stat-card fade-in",
@@ -153,9 +167,9 @@ def stat_card(title, value, subtitle="", colour=NAVY):
                 html.P(title, style={"color": MUTED, "fontSize": "0.75rem", "fontWeight": "700", "textTransform": "uppercase", "letterSpacing": "0.05em", "margin": "0"}),
                 html.Div(style={"width": "8px", "height": "8px", "borderRadius": "50%", "background": colour})
             ]),
-            html.H2(value, className="stat-value"),
+            html.H2(value if value else "0", className="stat-value"),
             html.P(style={"color": MUTED, "fontSize": "0.8rem", "margin": "0", "display": "flex", "alignItems": "center"}, children=[
-                html.I(className="fa-solid fa-arrow-up", style={"marginRight": "4px", "color": SUCCESS, "fontSize": "0.7rem"}) if "Success" in subtitle or "Volume" in title else "",
+                html.I(className="fa-solid fa-circle-info", style={"marginRight": "4px", "color": colour, "opacity": "0.5"}),
                 html.Span(subtitle)
             ]),
         ]
@@ -191,7 +205,7 @@ login_layout = html.Div(
                 html.Div(
                     className="login-visual",
                     children=[
-                        html.Img(src=app.get_asset_url("logo.png"), style={"width": "120px", "marginBottom": "2rem", "borderRadius": "10px"}),
+                        brand_logo("120px"),
                         html.Div(
                             children=[
                                 html.H1("AI SOLUTIONS", style={"fontSize": "3.5rem", "fontWeight": "800", "margin": "0", "letterSpacing": "-0.04em", "lineHeight": "1"}),
@@ -244,15 +258,19 @@ def generate_overview_page(filtered):
     countries_n = filtered["country"].nunique()
     success_pct = f"{success_cnt/total*100:.1f}%" if total > 0 else "0%"
 
-    # Summary Charts for Overview
-    hourly_data = filtered.groupby("hour").size().reset_index(name="count")
-    fig_hour = px.line(hourly_data, x="hour", y="count", color_discrete_sequence=[NAVY])
-    fig_hour.update_layout(**chart_theme, height=250, margin=dict(l=10, r=10, t=10, b=10))
-    fig_hour.update_xaxes(showgrid=False)
+    # Handle Empty Data for Charts
+    if filtered.empty:
+        fig_hour = go.Figure().update_layout(**chart_theme, height=250, annotations=[dict(text="No traffic data recorded", showarrow=False, font_size=12)])
+        fig_service = go.Figure().update_layout(**chart_theme, height=250, annotations=[dict(text="System standby", showarrow=False, font_size=12)])
+    else:
+        hourly_data = filtered.groupby("hour").size().reset_index(name="count")
+        fig_hour = px.line(hourly_data, x="hour", y="count", color_discrete_sequence=[NAVY])
+        fig_hour.update_layout(**chart_theme, height=250, margin=dict(l=10, r=10, t=10, b=10))
+        fig_hour.update_xaxes(showgrid=False)
 
-    service_data = filtered.groupby("service_type").size().reset_index(name="count").sort_values("count", ascending=False).head(5)
-    fig_service = px.pie(service_data, names="service_type", values="count", color_discrete_sequence=[NAVY, GOLD, SUCCESS, "#cbd5e1", DANGER], hole=0.6)
-    fig_service.update_layout(**chart_theme, height=250, showlegend=False, margin=dict(l=10, r=10, t=10, b=10))
+        service_data = filtered.groupby("service_type").size().reset_index(name="count").sort_values("count", ascending=False).head(5)
+        fig_service = px.pie(service_data, names="service_type", values="count", color_discrete_sequence=[NAVY, GOLD, SUCCESS, "#cbd5e1", DANGER], hole=0.6)
+        fig_service.update_layout(**chart_theme, height=250, showlegend=False, margin=dict(l=10, r=10, t=10, b=10))
 
     return html.Div([
         html.Div(
@@ -490,7 +508,7 @@ def dashboard_layout(pathname):
                     html.Div(
                         style={"marginBottom": "3rem", "padding": "0 0.5rem", "textAlign": "center"},
                         children=[
-                            html.Img(src=app.get_asset_url("logo.png"), style={"width": "80px", "marginBottom": "1.5rem", "borderRadius": "8px"}),
+                            brand_logo("80px"),
                             html.H2("AI SOLUTIONS", style={"color": "white", "fontSize": "1.5rem", "fontWeight": "800", "margin": "0", "fontFamily": "Montserrat", "letterSpacing": "-0.04em"}),
                             html.P("INTELLIGENCE PORTAL", style={"color": GOLD, "fontSize": "0.625rem", "fontWeight": "700", "margin": "0.25rem 0 0", "letterSpacing": "0.2em"})
                         ]
