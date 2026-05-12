@@ -69,14 +69,49 @@ SERVICE_COLOURS = {
 # ── CSS Design System (Managed via assets/style.css) ──────────────────────────
 
 
+# ── CSS Design System (Bulletproof Injection) ──────────────────────────────
+CSS_STYLES = """
+:root {
+    --primary: #003366;
+    --secondary: #C5A059;
+    --bg-main: #f8fafc;
+    --card-bg: rgba(255, 255, 255, 0.95);
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --success: #10b981;
+    --danger: #ef4444;
+    --sidebar-width: 280px;
+    --header-height: 80px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-main); color: var(--text-main); overflow-x: hidden; }
+.glass-card { background: var(--card-bg); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); border-radius: 1.5rem; transition: var(--transition); }
+.glass-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); }
+.sidebar { width: var(--sidebar-width); background: linear-gradient(180deg, #001e3c 0%, #003366 100%); padding: 2.5rem 1.5rem; height: 100vh; position: fixed; left: 0; top: 0; z-index: 1000; display: flex; flex-direction: column; box-shadow: 4px 0 24px rgba(0, 0, 0, 0.1); }
+.nav-link { display: flex; align-items: center; padding: 0.875rem 1.25rem; margin-bottom: 0.5rem; border-radius: 1rem; color: rgba(255, 255, 255, 0.6); text-decoration: none; font-weight: 500; font-size: 0.9375rem; transition: var(--transition); }
+.nav-link:hover { background: rgba(255, 255, 255, 0.05); color: white; }
+.nav-link.active { background: var(--secondary); color: #001e3c; box-shadow: 0 10px 15px -3px rgba(197, 160, 89, 0.3); }
+.stat-card { padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; min-height: 140px; }
+.stat-value { font-size: 2rem; font-weight: 800; color: var(--primary); margin: 0.5rem 0; font-family: 'Montserrat', sans-serif; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeIn 0.5s ease-out forwards; }
+.login-container { background: radial-gradient(circle at top right, #004080, #001e3c); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+.login-box { background: white; border-radius: 2.5rem; display: flex; overflow: hidden; max-width: 1100px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+.login-visual { flex: 1; background: var(--primary); padding: 4rem; color: white; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; }
+.login-form { flex: 1; padding: 5rem; }
+.logout-btn-premium { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--secondary); width: 100%; padding: 0.75rem; border-radius: 0.75rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; margin-top: 1rem; display: flex; align-items: center; justify-content: center; transition: var(--transition); text-transform: uppercase; letter-spacing: 0.05em; }
+.logout-btn-premium:hover { background: rgba(197, 160, 89, 0.1); border-color: var(--secondary); color: white; }
+.login-input { width: 100%; padding: 12px 0; border: none; border-bottom: 2px solid var(--border); font-size: 1rem; color: var(--text-main); background: transparent; outline: none; transition: var(--transition); height: 48px; line-height: 24px; }
+.login-input:focus { border-color: var(--primary); }
+"""
+
 # ── Dash Setup ───────────────────────────────────────────────────────────────
-import os
-server = flask.Flask(__name__, static_folder='assets')
+server = flask.Flask(__name__)
 app = dash.Dash(
     __name__, 
     server=server, 
-    assets_folder=os.path.join(os.getcwd(), 'assets'),
-    include_assets_files=True,
     suppress_callback_exceptions=True,
     external_stylesheets=[
         "https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap",
@@ -84,6 +119,27 @@ app = dash.Dash(
     ]
 )
 app.title = "AI Solutions | Institutional Intelligence"
+
+app.index_string = f'''
+<!DOCTYPE html>
+<html>
+    <head>
+        {{%metas%}}
+        <title>{{%title%}}</title>
+        {{%favicon%}}
+        {{%css%}}
+        <style>{CSS_STYLES}</style>
+    </head>
+    <body>
+        {{%app_entry%}}
+        <footer>
+            {{%config%}}
+            {{%scripts%}}
+            {{%renderer%}}
+        </footer>
+    </body>
+</html>
+'''
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  COMPONENTS
