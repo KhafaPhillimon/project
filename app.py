@@ -145,31 +145,30 @@ app.index_string = f'''
 #  COMPONENTS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def brand_logo(size="80px"):
+def brand_logo(size="60px"):
+    # Using a professional styled icon instead of an image to prevent broken icons on Render
     return html.Div(
-        style={"textAlign": "center", "marginBottom": "1.5rem"},
+        style={
+            "width": size, "height": size, "background": GOLD, "borderRadius": "16px",
+            "display": "flex", "alignItems": "center", "justifyContent": "center",
+            "margin": "0 auto 1.5rem", "boxShadow": "0 10px 15px -3px rgba(197, 160, 89, 0.4)"
+        },
         children=[
-            # Try to load the logo, if it fails, the alt text and styling provide a professional fallback
-            html.Img(
-                src=app.get_asset_url("logo.png"),
-                style={"width": size, "borderRadius": "12px", "display": "block", "margin": "0 auto"},
-                title="AI Solutions",
-                alt="⚡" # Minimalist icon if image fails
-            )
+            html.I(className="fa-solid fa-microchip", style={"color": NAVY, "fontSize": "2rem"})
         ]
     )
 
 def stat_card(title, value, subtitle="", colour=NAVY):
+    val_display = value if (value is not None and str(value) != "nan") else "0"
     return html.Div(
         className="glass-card stat-card fade-in",
         children=[
             html.Div(style={"display": "flex", "justifyContent": "space-between", "alignItems": "center"}, children=[
                 html.P(title, style={"color": MUTED, "fontSize": "0.75rem", "fontWeight": "700", "textTransform": "uppercase", "letterSpacing": "0.05em", "margin": "0"}),
-                html.Div(style={"width": "8px", "height": "8px", "borderRadius": "50%", "background": colour})
+                html.I(className="fa-solid fa-chart-line", style={"color": colour, "opacity": "0.3"})
             ]),
-            html.H2(value if value else "0", className="stat-value"),
+            html.H2(val_display, className="stat-value"),
             html.P(style={"color": MUTED, "fontSize": "0.8rem", "margin": "0", "display": "flex", "alignItems": "center"}, children=[
-                html.I(className="fa-solid fa-circle-info", style={"marginRight": "4px", "color": colour, "opacity": "0.5"}),
                 html.Span(subtitle)
             ]),
         ]
@@ -601,7 +600,15 @@ def dashboard_layout(pathname):
                             "margin": "0 auto",
                             "flex": "1"
                         },
-                        id="dynamic-page-content"
+                        id="dynamic-page-content",
+                        children=generate_overview_page(df) # Load overview by default to prevent empty state
+                    ),
+                    # Data Status Footer
+                    html.Div(
+                        style={"padding": "1rem 3rem", "fontSize": "0.7rem", "color": MUTED, "textAlign": "right"},
+                        children=[
+                            f"System Connection: {'Active' if not df.empty else 'Standby (No CSV Found)'}"
+                        ]
                     )
                 ]
             )
