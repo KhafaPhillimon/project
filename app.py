@@ -108,7 +108,9 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 """
 
 # ── Dash Setup ───────────────────────────────────────────────────────────────
-server = flask.Flask(__name__)
+server = flask.Flask(__name__, static_folder='assets')
+server.secret_key = "aisolutions-premium-key-2026" # Required for session stability on Render
+
 app = dash.Dash(
     __name__, 
     server=server, 
@@ -119,6 +121,11 @@ app = dash.Dash(
     ]
 )
 app.title = "AI Solutions | Institutional Intelligence"
+
+# Manual Asset Server (Fixes missing logos on Render)
+@server.route('/assets/<path:path>')
+def serve_assets(path):
+    return flask.send_from_directory('assets', path)
 
 app.index_string = f'''
 <!DOCTYPE html>
@@ -145,17 +152,13 @@ app.index_string = f'''
 #  COMPONENTS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def brand_logo(size="60px"):
-    # Using a professional styled icon instead of an image to prevent broken icons on Render
-    return html.Div(
+def brand_logo(size="80px"):
+    return html.Img(
+        src="/assets/logo.png", # Direct path to our manual asset server
         style={
-            "width": size, "height": size, "background": GOLD, "borderRadius": "16px",
-            "display": "flex", "alignItems": "center", "justifyContent": "center",
-            "margin": "0 auto 1.5rem", "boxShadow": "0 10px 15px -3px rgba(197, 160, 89, 0.4)"
-        },
-        children=[
-            html.I(className="fa-solid fa-microchip", style={"color": NAVY, "fontSize": "2rem"})
-        ]
+            "width": size, "borderRadius": "12px", "display": "block", 
+            "margin": "0 auto 1.5rem", "boxShadow": "0 10px 15px -3px rgba(0,0,0,0.1)"
+        }
     )
 
 def stat_card(title, value, subtitle="", colour=NAVY):
@@ -658,24 +661,24 @@ def update_dynamic_content(pathname, country_filter, service_filter):
     Output("session-store", "data"),
     Output("login-error", "children"),
     Input("login-btn", "n_clicks"),
-    Input("login-username", "n_submit"),
-    Input("login-password", "n_submit"),
     State("login-username", "value"),
     State("login-password", "value"),
     prevent_initial_call=True,
 )
-def handle_login(n_clicks, n_submit_u, n_submit_p, username, password):
+def handle_login(n_clicks, username, password):
+    if n_clicks is None or n_clicks == 0:
+        return dash.no_update, ""
+        
     if not username or not password:
-        return dash.no_update, "Identification required."
+        return dash.no_update, "Credentials required."
     
-    # Robust credential check
-    clean_username = username.strip().lower()
-    clean_password = password.strip()
+    u = username.strip().lower()
+    p = password.strip()
     
-    if clean_username in USERS and USERS[clean_username] == clean_password:
-        return {"logged_in": True, "user": clean_username}, ""
+    if u in USERS and USERS[u] == p:
+        return {"logged_in": True, "user": u}, ""
     
-    return dash.no_update, "Access Denied. Check credentials."
+    return dash.no_update, "Invalid access credentials."
 
 @app.callback(
     Output("session-store", "data", allow_duplicate=True),
